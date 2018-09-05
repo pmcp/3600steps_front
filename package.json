@@ -1,0 +1,39 @@
+{
+  "name": "3600steps",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "buefy": "^0.6.6",
+    "firebase": "^5.4.2",
+    "register-service-worker": "^1.0.0",
+    "vue": "^2.5.16",
+    "vue-carousel": "^0.9.0",
+    "vue-form": "^4.9.0",
+    "vue-image-upload-resize": "^1.1.6",
+    "vue-masonry": "^0.11.4",
+    "vue-meta": "^1.5.2",
+    "vue-moment": "^4.0.0",
+    "vue-router": "^3.0.1",
+    "vue-web-storage": "^2.0.1",
+    "vue2-circle-progress": "^1.2.3"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^3.0.0-rc.3",
+    "@vue/cli-plugin-eslint": "^3.0.0-rc.3",
+    "@vue/cli-plugin-pwa": "^3.0.0-rc.3",
+    "@vue/cli-service": "^3.0.0-rc.3",
+    "node-sass": "^4.9.0",
+    "sass-loader": "^7.0.1",
+    "vue-template-compiler": "^2.5.16"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not ie <= 8"
+  ]
+}

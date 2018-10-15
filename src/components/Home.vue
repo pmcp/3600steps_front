@@ -34,8 +34,8 @@
       <div class="grid" style=" display: flex;flex-direction:row;flex-wrap:wrap;justify-content: space-between">
         <div v-for="(item, index) in imageSelection" v-bind:key="index+'_grid'" style="width:18%;margin-bottom:2rem;" v-bind:style="{'margin-left': Math.floor(Math.random() * 50) + 1  +'px','margin-right': Math.floor(Math.random() * 50) + 1  +'px'  }" >
           <div class="filtered" v-bind:class="classes[Math.floor(Math.random() * 2)]" style="float:left" @click="imageModal(item.url)">
-            <img v-if="item.thumb" class="grid-picture" :src="item.thumb" >
-            <img v-else class="grid-picture" :src="item.url" >
+            <!-- <img v-if="item.thumb" class="grid-picture" :src="item.thumb" > -->
+            <img class="grid-picture" :src="item.url" >
           </div>
         </div>
       </div>
@@ -45,16 +45,6 @@
 
 <script>
 import { db } from '../firebase';
-
-
-// function shuffle(a) {
-//   for (let i = a.length - 1; i > 0; i--) {
-//     let j = Math.floor(Math.random() * (i + 1));
-//     [a[i], a[j]] = [a[j], a[i]];
-//   }
-//   return a;
-// }
-
 
 export default {
   name: 'Home',
@@ -68,13 +58,11 @@ export default {
       numberOfPicturesInSelection: 12
     };
   },
-  props: ['database'],
   firebase: function() {
     return {
-      walks: db.ref(this.database + '/walks'),
-      // imagesAll: db.ref(this.database + '/images').orderByChild('dateAdded').startAt(1530199962181).limitToFirst(10),
+      walks: db.ref('data/walks'),
       images: {
-        source: db.ref(this.database + '/images'),
+        source: db.ref('data/images'),
         readyCallback: function() {
           this.getRandom();
         },
@@ -86,17 +74,15 @@ export default {
     },
 
   methods: {
-    // deleteFB(item) {
-    //   this.$firebaseRefs.imagesAll.child(item['.key']).remove()
-    // },
     imageModal(url) {
-      this.$modal.open('<img src="' + url + '">');
+      const randomClass = this.classes[Math.floor(Math.random() * 2)];
+      console.log(randomClass);
+      this.$modal.open('<div class="filtered ' + randomClass + '" ><img src="' + url + '"></div>');
+      
+
     },
     getRandom: function() {
-
         let vm = this;
-
-
         Array.prototype.shuffle = function(){
           for (var i = 0; i < this.length; i++){
               var a = this[i];
@@ -105,7 +91,6 @@ export default {
               this[b] = a;
           }
         }
-
         function shuffleProperties(obj) {
             var new_obj = {};
             var keys = getKeys(obj);
@@ -117,64 +102,52 @@ export default {
             }
             return new_obj;
         }
-      
         function getKeys(obj){
             var arr = new Array();
             for (var key in obj)
-                arr.push(key);
+                // also a small step to check if the picture is hidden, otherwise it shouldnt be in the array
+                if(obj[key].hide !== true) {arr.push(key)}
             return arr;
         }
-
-
         let walk = vm.theWalk;
 
-
-
-      
-      if(walk == null) {
-                vm.$firebaseRefs.images
+      if(walk == null) {  
+        vm.$firebaseRefs.images
           .once('value', snapshot => {
             let images = snapshot.val();          
             vm.imageSelection = shuffleProperties(images);
           });
-
       } else {
-
-      
         vm.$firebaseRefs.images
           .orderByChild('walk')
           .equalTo(walk)
           .once('value', snapshot => {
-            let images = snapshot.val();          
+            let images = snapshot.val();
             vm.imageSelection = shuffleProperties(images);
           });
       }
     },
       
     filterByWalk: function(walk) {
-      console.log(walk);
       let vm = this;
       vm.theWalk = walk;
       if(walk == null) {
         return;
-        
-
       } else {
       vm.$firebaseRefs.images
         .orderByChild('walk')
         .equalTo(walk)
-        .limitToLast(vm.numberOfPicturesInSelection)
         .once('value', snapshot => {
-          
           vm.imageSelection = snapshot.val();
+          vm.getRandom();
         });
-        }
+      }
     },
   },
 };
 </script>
 
-<style scoped>
+<style >
 .maintitle {
   font-size: 6vw;
   text-align: center;
@@ -208,5 +181,9 @@ svg {
   filter: grayscale(100%) contrast(200%);
   opacity: 1;
   margin-bottom: -6px;
+}
+
+.modal-background {
+  background-color: RGBA(255, 255, 255, .80)
 }
 </style>

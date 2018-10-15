@@ -14,6 +14,4 @@ var firebaseApp = Firebase.initializeApp({
 // If you want to get fancy, use mixins or provide / inject to avoid redundant imports.
 export var db = firebaseApp.database();
 export var storage = firebaseApp.storage();
-
 export const storageRef = firebaseApp.storage().ref();
-

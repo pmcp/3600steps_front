@@ -1,10 +1,5 @@
 <template>
     <div>
-      <!-- <p>languageSet: {{languageSet}}</p>
-      <p>Instructions: {{instructions}}</p>
-      <p>User Started: {{user.started}}</p>
-      <p>User pictures ({{user.pictures}}) is less than maximum pictures ({{maxPictures}}): {{user.pictures < maxPictures}}</p>
-      <p>activeWalk: {{activeWalk}}</p> -->
       <!--
           First we check if the language is set. We check if the user exists, and if so, we set the language according to his preferences.
 
@@ -61,13 +56,13 @@
           <div v-if="instructions && user.started != null" class="icon" v-on:click="instructions = !instructions">
             <a class="delete is-medium"></a>
           </div>
-          <instructions :user="user" :copy="copy" :slides="slides" v-on:close="instructions = !instructions" v-on:saveUser="saveUser" v-on:edit="edit" />
+          <instructions :user="user" :copy="copy" :slides="slides" v-on:close="instructions = !instructions" v-on:saveUser="saveUser" />
         </div>
 
         <!--
           If the walk doesn't exist, we give an error message.
        -->
-        <div v-if="activeWalk == null" class="container" v-html="copy[4][user.language]" @click.alt="edit(copy[4])">
+        <div v-if="activeWalk == null" class="container" v-html="copy[4][user.language]" >
         </div>
         <!-- <div v-if="userId === null && user.language !== null">
         </div> -->
@@ -93,9 +88,9 @@
               -->
               <div style="width:100%;height: 100%;position:absolute;top: 0;left: 0;">
                 <div style="position:relative;top:60%;display:flex;justify-content: center;align-items: center;" v-if="user.pictures < maxPictures ">
-                  <div v-html="copy[6][user.language]" @click.alt="edit(copy[6])"></div>
+                  <div v-html="copy[6][user.language]"></div>
                   <div style="padding:5px;">{{maxPictures -user.pictures}}</div>
-                  <div v-html="copy[7][user.language]" @click.alt="edit(copy[7])"></div>
+                  <div v-html="copy[7][user.language]"></div>
                 </div>
               </div>
             </div>
@@ -103,7 +98,7 @@
                     If the user has taken the maximum pictures allowed, we'll show a sentence stating that the walk is finished
               -->
               <div style="width:100%;height: 100%;position:absolute;top: 0;left: 0;">
-                <div style="position:relative;top:40%;align-text: center;width:100%;padding-left:2rem;padding-right:2rem;" v-if="user.pictures === maxPictures" v-html="copy[5][user.language]" @click.alt="edit(copy[5])">>
+                <div style="position:relative;top:40%;align-text: center;width:100%;padding-left:2rem;padding-right:2rem;" v-if="user.pictures === maxPictures" v-html="copy[5][user.language]">
               </div>
 
             </div>
@@ -117,7 +112,7 @@
 import { db } from '../firebase';
 import Camera from '../components/Walk.Camera.vue';
 import Instructions from '../components/Walk.Instructions.vue';
-import EditContent from '../components/Edit.Content.vue';
+
 
 function getSeconds() {
   let date = new Date();
@@ -144,17 +139,16 @@ export default {
 
   components: {
     Camera,
-    Instructions,
-    EditContent,
+    Instructions
   },
   metaInfo: {
       title: 'walk',
     },
   firebase: function() {
     return {
-      walks: db.ref(this.database + '/walks'),
-      users: db.ref(this.database + '/users'),
-      pictures: db.ref(this.database + '/images'),
+      walks: db.ref('data/walks'),
+      users: db.ref('data/users'),
+      pictures: db.ref('data/images'),
       copy: {
         source: db.ref('/admin/copy'),
         readyCallback: function() {
@@ -167,7 +161,6 @@ export default {
   methods: {
     // This should completely go to fb functions
     fileUploaded(data) {
-      console.log(data);
       if (this.userKey === null) {
         // No user key is set, user does not exist
       } else {
@@ -236,20 +229,11 @@ export default {
       this.$storage.set('userKey', newUser.key, 1000 * 3000);
       this.getUser(newUser.key);
     },
-
-    edit: function(value) {
-      this.$modal.open({
-        parent: this,
-        component: EditContent,
-        hasModalCard: true,
-        props: { text: value, database: this.database },
-      });
-    },
   },
 
   created: function() {
     let vm = this;
-    this.$storage.remove('userKey');
+    // this.$storage.remove('userKey');
     vm.checkWalk(this.$route.params.id);
     let userId = vm.$storage.get('userKey');
     if (userId === null) {

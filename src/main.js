@@ -43,10 +43,10 @@ Vue.use(Meta, {
 
 Vue.config.productionTip = false;
 
-import Home from './components/Home.vue';
+import Home from './views/Home.vue';
+import Help from './views/Help.vue';
 import Walk from './components/Walk.vue';
-import Admin from './components/Admin.Settings.vue';
-import Finder from './components/Admin.Finder.vue';
+
 
 var Routes = [
   {
@@ -54,12 +54,8 @@ var Routes = [
     component: Home,
   },
   {
-    path: '/admin',
-    component: Admin,
-  },
-  {
-    path: '/finder',
-    component: Finder,
+    path: '/',
+    component: Home,
   },
   {
     path: '/:id',

@@ -38,7 +38,7 @@
   import { ImageUploader } from 'vue-image-upload-resize'
   
   export default {
-    props: ['lastPicture', 'copy', 'user', 'database'],
+    props: ['lastPicture', 'copy', 'user'],
     data() {
       return {
         uploadedFiles: [],

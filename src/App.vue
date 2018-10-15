@@ -1,22 +1,18 @@
 <template>
   <div id="app">
-    <router-view :database="database" v-on:localStorageBehavior="deleteLocalStorage" ></router-view>
+    <router-view></router-view>
   </div>
 </template>
 
 <script>
-import EditMenu from './components/Edit.Menu.vue';
+// import EditMenu from './components/Edit.Menu.vue';
 
 export default {
   name: 'app',
-  data() {
-    return {
-      database: 'v2',
-    };
-  },
-  components: {
-    EditMenu,
-  },
+  // data() {
+  //   return {
+  //   };
+  // },
   metaInfo: {
       // if no subcomponents specify a metaInfo.title, this title will be used
       title: '3600 Steps',
@@ -29,14 +25,6 @@ export default {
     },
     deleteLocalStorage() {
       this.$storage.remove('userKey');
-    },
-    openMenu() {
-      this.$modal.open({
-        parent: this,
-        component: EditMenu,
-        hasModalCard: true,
-        props: {},
-      });
     },
   },
 };

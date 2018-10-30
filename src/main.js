@@ -45,14 +45,10 @@ Vue.config.productionTip = false;
 
 import Home from './views/Home.vue';
 import Help from './views/Help.vue';
-import Walk from './components/Walk.vue';
+import Walk from './views/Walk.vue';
 
 
 var Routes = [
-  {
-    path: '/',
-    component: Home,
-  },
   {
     path: '/',
     component: Home,

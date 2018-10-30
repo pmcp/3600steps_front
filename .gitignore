@@ -1,7 +1,11 @@
 .DS_Store
 /node_modules
 /dist
-/functions
+/functions/*
+!/functions/index.js
+!/functions/package.json
+!/functions/package-lock.json
+
 # local env files
 .env.local
 .env.*.local

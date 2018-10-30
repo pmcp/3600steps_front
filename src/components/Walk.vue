@@ -149,6 +149,8 @@ export default {
       walks: db.ref('data/walks'),
       users: db.ref('data/users'),
       pictures: db.ref('data/images'),
+      functions: db.ref('functions'),
+
       copy: {
         source: db.ref('/admin/copy'),
         readyCallback: function() {
@@ -161,6 +163,7 @@ export default {
   methods: {
     // This should completely go to fb functions
     fileUploaded(data) {
+      console.log(data);
       if (this.userKey === null) {
         // No user key is set, user does not exist
       } else {
@@ -185,7 +188,46 @@ export default {
         user: this.$storage.get('userKey'),
         walk: this.activeWalk,
         filePath: data.filePath,
-      });
+        mime: data.mime
+      }).then((result) => {
+        // Also put this in the queue for Vision
+        this.$firebaseRefs.functions.child('vision').push({
+          url: data.url,
+          dateAdded: getSeconds(),
+          user: this.$storage.get('userKey'),
+          walk: this.activeWalk,
+          filePath: data.filePath,
+          mime: data.mime,
+          key: result.key
+        });
+
+
+        // Also put this in the queue for image Resizing
+        this.$firebaseRefs.functions.child('resize').push({
+       
+       
+       
+       
+          filePath: data.filePath,
+          mime: data.mime,
+          resizes: {
+            'small': {
+              'name': 'small',
+              'size': '25%'
+            },
+            'thumb': {
+              'name': 'thumb',
+              'size': '5%'
+            }
+          },
+          key: result.key
+        });
+        return;
+      })
+
+    
+
+
     },
 
     checkWalk: function(id) {

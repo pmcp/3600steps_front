@@ -87,26 +87,28 @@
         
           let vm = this;
           return new Promise((resolve, reject) => {
-            console.log(file)
+            const mime = file.type;
+            const newFileName = Date.now();
             // const fReader = new FileReader();
             // fReader.onload = () => {
-              
-                var uploadTask = storageRef.child('uploads/' + Date.now() + '-' + file.name).put(file);
+
+                var imageRef = storageRef.child('test/' + newFileName);
+                var uploadTask = imageRef.put(file);
                 uploadTask.on('state_changed', function(snapshot){
-                  
-                    let progressUpload = parseInt((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                    vm.$refs.uploadCircle.updateProgress(progressUpload);
-                    }, function(error) {
-                        console.log(error);
-                        reject(error);
-                    }, function() {
-                    uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
-                      vm.$refs.uploadCircle.updateProgress(0);
-                      resolve(downloadURL);
-                    });
+                    
+                      let progressUpload = parseInt((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                      vm.$refs.uploadCircle.updateProgress(progressUpload);
+                      }, function(error) {
+                          console.log(error);
+                          reject(error);
+                      }, function() {
+                      uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+                        vm.$refs.uploadCircle.updateProgress(0);
+                        resolve({downloadURL, newFileName, mime});
+                      });
                 });
             // };
-            // fReader.readAsDataURL(file);
+            // fReader.readAsDataURL(file, );
           })
         },
 
@@ -145,20 +147,18 @@
         let vm = this;
         
           this.uploadToFirebase(file)
-          .then(url => ({
-            fileName: file.name,
-            url: url
-          }))
           .then(x => {
-            let url = x.url;
-            let date = new Date();
-            let now = date.getTime();
-            let filePath = vm.database + '/' + now;
+            console.log('the x is:', x);
+            let url = x.downloadURL;
+            let mime = x.mime;
+            let filePath = 'test/' + x.newFileName;
             
             let data = {
               filePath,
-              url
+              url,
+              mime
             };
+            console.log(data);
             vm.$emit('uploaded', data);
   
           })

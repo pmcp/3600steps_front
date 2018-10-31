@@ -4,6 +4,7 @@ import Vue from 'vue/dist/vue.js';
 import VueFire from 'vuefire';
 import App from './App.vue';
 
+
 Vue.use(VueFire);
 
 // Plugin for webstorage (https://github.com/ankurk91/vue-web-storage)
@@ -45,7 +46,7 @@ Vue.config.productionTip = false;
 
 import Home from './views/Home.vue';
 import Help from './views/Help.vue';
-import Walk from './components/Walk.vue';
+import Walk from './views/Walk.vue';
 
 
 var Routes = [
@@ -54,8 +55,8 @@ var Routes = [
     component: Home,
   },
   {
-    path: '/',
-    component: Home,
+    path: '/help',
+    component: Help,
   },
   {
     path: '/:id',

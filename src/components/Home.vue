@@ -61,12 +61,7 @@ export default {
   firebase: function() {
     return {
       walks: db.ref('data/walks'),
-      images: {
-        source: db.ref('data/images'),
-        readyCallback: function() {
-          this.getRandom();
-        },
-      },
+
     };
   },
   metaInfo: {
@@ -112,13 +107,13 @@ export default {
         let walk = vm.theWalk;
 
       if(walk == null) {  
-        vm.$firebaseRefs.images
+        db.ref('data/images')
           .once('value', snapshot => {
             let images = snapshot.val();          
             vm.imageSelection = shuffleProperties(images);
           });
       } else {
-        vm.$firebaseRefs.images
+        db.ref('data/images')
           .orderByChild('walk')
           .equalTo(walk)
           .once('value', snapshot => {

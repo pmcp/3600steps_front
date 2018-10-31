@@ -1,5 +1,7 @@
+
 <template>
     <div>
+      
       <!--
           First we check if the language is set. We check if the user exists, and if so, we set the language according to his preferences.
 
@@ -82,7 +84,7 @@
               <div class="icon" v-if="!instructions && user.started != null" v-on:click="instructions = !instructions">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
               </div>
-              <Camera :database="database" :copy="copy" :user="user" v-if="user.pictures < maxPictures " v-on:uploaded="fileUploaded" :lastPicture="user.lastPicture" />
+              <Camera :copy="copy" :user="user" v-if="user.pictures < maxPictures " v-on:uploaded="fileUploaded" :lastPicture="user.lastPicture" />
               <!--
                   If the user is set, we don't need to start with the instructions, so we just show the camera
               -->
@@ -100,7 +102,6 @@
               <div style="width:100%;height: 100%;position:absolute;top: 0;left: 0;">
                 <div style="position:relative;top:40%;align-text: center;width:100%;padding-left:2rem;padding-right:2rem;" v-if="user.pictures === maxPictures" v-html="copy[5][user.language]">
               </div>
-
             </div>
           </div>
       </div>
@@ -113,6 +114,36 @@ import { db } from '../firebase';
 import Camera from '../components/Walk.Camera.vue';
 import Instructions from '../components/Walk.Instructions.vue';
 
+
+
+
+function checkWalk (id) {
+  return new Promise((resolve, reject) => {
+    // Check if walk exists and if it started less than 24h ago
+    db
+    .ref('data/walks')
+    .orderByChild('id')
+    .equalTo(id)
+    .once('value')
+    .then(function (snapshot) {
+      const value = snapshot.val();
+      if (value) {
+        console.log('got snapshot', value)
+        console.log('got walk data', value)
+        if (value === null) {
+          resolve(null);
+        } else {
+          snapshot.forEach(function(index) {
+            console.log('got walk key', index.key)
+            resolve(index.key);
+          });
+        }
+      } else {
+      reject;
+      }
+    });
+  });
+}
 
 function getSeconds() {
   let date = new Date();
@@ -135,8 +166,6 @@ export default {
       activeWalk: null,
     };
   },
-  props: ['database'],
-
   components: {
     Camera,
     Instructions
@@ -144,13 +173,7 @@ export default {
   metaInfo: {
       title: 'walk',
     },
-  firebase: function() {
-    return {
-      walks: db.ref('data/walks'),
-      users: db.ref('data/users'),
-      pictures: db.ref('data/images'),
-      functions: db.ref('functions'),
-
+  firebase: {
       copy: {
         source: db.ref('/admin/copy'),
         readyCallback: function() {
@@ -158,8 +181,7 @@ export default {
         },
       },
       slides: db.ref('/admin/slides'),
-    };
-  },
+    },
   methods: {
     // This should completely go to fb functions
     fileUploaded(data) {
@@ -168,13 +190,11 @@ export default {
         // No user key is set, user does not exist
       } else {
         // User key is set, user exist, add one to number of pictures
-        let userPicturesRef = this.$firebaseRefs.users.child(
-          this.userId + '/pictures'
-        );
+        let userPicturesRef =  db.ref('data/users').child(this.userId + '/pictures');
         userPicturesRef.transaction(function(pictures) {
           return pictures + 1;
         });
-        let userTakenTimeRef = this.$firebaseRefs.users.child(
+        let userTakenTimeRef = db.ref('data/users').child(
           this.userId + '/lastPicture'
         );
         userTakenTimeRef.transaction(function() {
@@ -182,7 +202,7 @@ export default {
         });
       }
 
-      this.$firebaseRefs.pictures.push({
+      db.ref('data/pictures').push({
         url: data.url,
         dateAdded: getSeconds(),
         user: this.$storage.get('userKey'),
@@ -191,7 +211,7 @@ export default {
         mime: data.mime
       }).then((result) => {
         // Also put this in the queue for Vision
-        this.$firebaseRefs.functions.child('vision').push({
+        db.ref('data/functions/vision').push({
           url: data.url,
           dateAdded: getSeconds(),
           user: this.$storage.get('userKey'),
@@ -201,13 +221,8 @@ export default {
           key: result.key
         });
 
-
         // Also put this in the queue for image Resizing
-        this.$firebaseRefs.functions.child('resize').push({
-       
-       
-       
-       
+         db.ref('data/functions/resize').push({
           filePath: data.filePath,
           mime: data.mime,
           resizes: {
@@ -224,34 +239,13 @@ export default {
         });
         return;
       })
-
-    
-
-
     },
 
-    checkWalk: function(id) {
-      let vm = this;
-      // Check if walk exists and if it started less than 24h ago
-      vm.$firebaseRefs.walks
-        .orderByChild('id')
-        .equalTo(id)
-        .once('value', snapshot => {
-          let walkData = snapshot.val();
-          if (walkData === null) {
-            vm.activeWalk = null;
-          } else {
-            snapshot.forEach(function(index) {
-              vm.activeWalk = index.key;
-            });
-          }
-        });
-    },
 
     getUser: function(userId) {
       this.$bindAsObject(
         'user',
-        this.$firebaseRefs.users.child(userId),
+        db.ref('data/users').child(userId),
         null,
         () => {
           this.userId = userId;
@@ -259,8 +253,9 @@ export default {
         }
       );
     },
+
     saveUser: function(user) {
-      let newUser = this.$firebaseRefs.users.push({
+      let newUser = db.ref('data/users').push({
         started: getSeconds(),
         pictures: 0,
         walk: this.activeWalk,
@@ -275,17 +270,21 @@ export default {
 
   created: function() {
     let vm = this;
-    // this.$storage.remove('userKey');
-    vm.checkWalk(this.$route.params.id);
-    let userId = vm.$storage.get('userKey');
+    // Get The UserId out of local storage. If it is not in there, set the language to dutch.
+    this.$storage.remove('userKey');
+    const userId = vm.$storage.get('userKey');
     if (userId === null) {
       vm.user = {
         language: 'nl',
       };
-      // return;
     } else {
       vm.getUser(userId);
     }
+    checkWalk(this.$route.params.id)
+    .then(function(result){
+      vm.activeWalk = result;
+    });
+
   },
 };
 </script>

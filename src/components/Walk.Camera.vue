@@ -68,19 +68,6 @@
         this.uploadedFiles = [];
         this.uploadError = null;
       },
-
-      // upload(formData) {
-        
-      //   const photos = formData.getAll('photos');
-      //   const promises = photos.map((x) => this.uploadToFirebase(x)
-      //   .then(url => ({
-      //     fileName: x.name,
-      //     url: url
-      //   })));
-        
-      //   return Promise.all(promises);
-      // },
-
   
 
        uploadToFirebase(file) {
@@ -89,58 +76,24 @@
           return new Promise((resolve, reject) => {
             const mime = file.type;
             const newFileName = Date.now();
-            // const fReader = new FileReader();
-            // fReader.onload = () => {
+            var imageRef = storageRef.child('test/' + newFileName);
+            var uploadTask = imageRef.put(file);
+            uploadTask.on('state_changed', function(snapshot){
+                  let progressUpload = parseInt((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                  vm.$refs.uploadCircle.updateProgress(progressUpload);
+                  }, function(error) {
+                      console.log(error);
+                      reject(error);
+                  }, function() {
+                  uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
+                    vm.$refs.uploadCircle.updateProgress(0);
+                    resolve({downloadURL, newFileName, mime});
+                  });
+            });
 
-                var imageRef = storageRef.child('test/' + newFileName);
-                var uploadTask = imageRef.put(file);
-                uploadTask.on('state_changed', function(snapshot){
-                    
-                      let progressUpload = parseInt((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                      vm.$refs.uploadCircle.updateProgress(progressUpload);
-                      }, function(error) {
-                          console.log(error);
-                          reject(error);
-                      }, function() {
-                      uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
-                        vm.$refs.uploadCircle.updateProgress(0);
-                        resolve({downloadURL, newFileName, mime});
-                      });
-                });
-            // };
-            // fReader.readAsDataURL(file, );
           })
         },
 
-
-
-      // uploadToFirebase(file) {
-        
-      //     let vm = this;
-      //     return new Promise((resolve, reject) => {
-      //       const fReader = new FileReader();
-      //       fReader.onload = () => {
-              
-      //           var uploadTask = storageRef.child('uploads/' + Date.now() + '-' + file.name).put(file);
-      //           uploadTask.on('state_changed', function(snapshot){
-                  
-      //               let progressUpload = parseInt((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-      //               vm.$refs.uploadCircle.updateProgress(progressUpload);
-      //               }, function(error) {
-      //                   console.log(error);
-      //                   reject(error);
-      //               }, function() {
-      //               uploadTask.snapshot.ref.getDownloadURL().then(function(downloadURL) {
-      //                 vm.$refs.uploadCircle.updateProgress(0);
-      //                 resolve(downloadURL);
-      //               });
-      //           });
-      //       };
-      //       fReader.readAsDataURL(file);
-      //     })
-      //   },
-
- 
 
       save(file) {
         

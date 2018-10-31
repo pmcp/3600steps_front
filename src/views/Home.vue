@@ -60,9 +60,8 @@ export default {
   },
   firebase: function() {
     return {
-      walks: db.ref('data/walks'),
-      images: {
-        source: db.ref('data/images'),
+      walks: {
+        source: db.ref('data/walks'),
         readyCallback: function() {
           this.getRandom();
         },
@@ -78,8 +77,6 @@ export default {
       const randomClass = this.classes[Math.floor(Math.random() * 2)];
       console.log(randomClass);
       this.$modal.open('<div class="filtered ' + randomClass + '" ><img src="' + url + '"></div>');
-      
-
     },
     getRandom: function() {
         let vm = this;
@@ -112,13 +109,13 @@ export default {
         let walk = vm.theWalk;
 
       if(walk == null) {  
-        vm.$firebaseRefs.images
+        db.ref('data/images')
           .once('value', snapshot => {
             let images = snapshot.val();          
             vm.imageSelection = shuffleProperties(images);
           });
       } else {
-        vm.$firebaseRefs.images
+        db.ref('data/images')
           .orderByChild('walk')
           .equalTo(walk)
           .once('value', snapshot => {
@@ -134,7 +131,7 @@ export default {
       if(walk == null) {
         return;
       } else {
-      vm.$firebaseRefs.images
+      db.ref('data/images')
         .orderByChild('walk')
         .equalTo(walk)
         .once('value', snapshot => {

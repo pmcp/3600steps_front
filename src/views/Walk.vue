@@ -202,7 +202,7 @@ export default {
         });
       }
 
-      db.ref('data/pictures').push({
+      db.ref('data/images').push({
         url: data.url,
         dateAdded: getSeconds(),
         user: this.$storage.get('userKey'),
@@ -210,33 +210,33 @@ export default {
         filePath: data.filePath,
         mime: data.mime
       }).then((result) => {
-        // Also put this in the queue for Vision
-        db.ref('data/functions/vision').push({
-          url: data.url,
-          dateAdded: getSeconds(),
-          user: this.$storage.get('userKey'),
-          walk: this.activeWalk,
-          filePath: data.filePath,
-          mime: data.mime,
-          key: result.key
-        });
+      // Also put this in the queue for Vision
+      db.ref('functions/vision').push({
+        url: data.url,
+        dateAdded: getSeconds(),
+        user: this.$storage.get('userKey'),
+        walk: this.activeWalk,
+        filePath: data.filePath,
+        mime: data.mime,
+        key: result.key
+      });
 
-        // Also put this in the queue for image Resizing
-         db.ref('data/functions/resize').push({
-          filePath: data.filePath,
-          mime: data.mime,
-          resizes: {
-            'small': {
-              'name': 'small',
-              'size': '25%'
-            },
-            'thumb': {
-              'name': 'thumb',
-              'size': '5%'
-            }
+      // Also put this in the queue for image Resizing
+        db.ref('functions/resize').push({
+        filePath: data.filePath,
+        mime: data.mime,
+        resizes: {
+          'small': {
+            'name': 'small',
+            'size': '25%'
           },
-          key: result.key
-        });
+          'thumb': {
+            'name': 'thumb',
+            'size': '5%'
+          }
+        },
+        key: result.key
+      });
         return;
       })
     },

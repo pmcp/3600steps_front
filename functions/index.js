@@ -58,25 +58,27 @@ function getVisionParameters(gcsUrl) {
   return visionClient.annotateImage(visionReq);
 }
 
-function downloadFile(filePath, tempLocalFile) {
-  return bucket.file(filePath).download({ destination: tempLocalFile })
-    .then(() => {
-      return tempLocalFile;
-    })
-}
+// function downloadFile(filePath, tempLocalFile) {
+  
+//   bucket.file(filePath).download({ destination: tempLocalFile })
+//     .then((result) => {
+//       console.log(result);
+//       return tempLocalFile;
+//     })
+// }
 
-function createRandomFileName(filePath) {
-  return path.join(os.tmpdir(), crypto.randomBytes(20).toString('hex') + path.extname(filePath));
-}
+// function createRandomFileName(filePath) {
+//   return path.join(os.tmpdir(), crypto.randomBytes(20).toString('hex') + path.extname(filePath));
+// }
 
-function uploadToBucket(file, path, mime) {
+function uploadToBucket(filePath, mime) {
   const metadata = {
     'contentType': mime,
     'Cache-Control': 'publi,max-age=3600',
   };
   
-  return bucket.upload(file, {
-    destination: path,
+  return bucket.upload(filePath, {
+    destination: filePath,
     metadata: metadata,
   })
 }
@@ -87,59 +89,47 @@ function getGcsUrl(filePath) {
   return gcsUrl;
 }
 
-function addToFunctionQueue(typeOfFunction, data) {
-  return admin
-  .database()
-  .ref('functions/' + typeOfFunction)
-  .push(data).then((snapshot) => {
-    return snapshot.key;
-  });
-}
-
-function saveToFirebase(path, data) {
-  admin
-    .database()
-    .ref(
-      'data/images/' +
-      path
-    )
-    .set(data);
-}
-
 function updateFirebase(path, data) {
-  const ref = admin
-              .database()
-              .ref(
-              'data/images/' +
-              path
-              );
+  const ref = admin.database().ref(path);
   ref.set(data);
 }
 
-function resizeProcess(newFileName, localFile, extension, file, mime, key, sizeName, sizeValue) {
-  const localFileResized = newFileName + '_' + sizeName + extension;
-  const resizedPath = sizeName + '/' + localFileResized;
+
+
+
+
+function resizeProcess(tempFile, filePath, mime, key, sizeName, sizeValue) {
+  const resizedFile = path.join(os.tmpdir(), sizeName, filePath);
+  const tempLocalResizedDir = path.dirname(resizedFile);
 
   return Promise.resolve()
   .then(() => {
-    return spawn('convert', [file, '-scale', sizeValue, localFileResized], {capture: ['stdout', 'stderr']});
+    console.log('4')
+    return mkdirp(tempLocalResizedDir);
+  })
+  .then(() => {
+    console.log('5')
+    return spawn('convert', [tempFile, '-scale', sizeValue, resizedFile], {capture: ['stdout', 'stderr']});
   })
   .then((result) => {
-    return uploadToBucket(localFileResized, resizedPath, mime);
+    console.log('6')
+    console.log(result);
+    return uploadToBucket(resizedFile, mime);
   })
   .then((result) => {
-    const uploadedFile = bucket.file(resizedPath);
+    const uploadedFile = bucket.file(resizedFile);
     return uploadedFile.getSignedUrl({
       action: 'read',
       expires: '03-09-2491',
     });
   })
   .then((result) => {
-    return updateFirebase(key + '/' + sizeName, result[0]);
+    console.log('7', result[0]);
+    updateFirebase('data/images/' + key + '/' + sizeName, result[0]);    
+    return
   })
   .then((result) => {
-    fs.unlinkSync(localFile);
-    fs.unlinkSync(localFileResized);
+    fs.unlinkSync(resizedFile);
     return;
   })  
 }
@@ -157,31 +147,50 @@ exports.getVision = functions.database
   .then(() => {
     return getVisionParameters(gcsUrl);
   })
-  .then(([visionData]) => {
-    return updateFirebase(data.key + '/meta/vision', visionData);
+  .then((visionData) => {
+    console.log('visionData', visionData);
+    visionData = visionData[0];
+    visionData.imageKey = data.key;
+    console.log('visionData after added key', visionData);
+    return admin.database().ref('data/vision').push(visionData)
+  })
+  .then((snapshot) => {
+    console.log('the key', snapshot.key);
+    updateFirebase('data/images/' + data.key + '/vision', snapshot.key);
+    return
   })
 })
 
 exports.resizeImage= functions.database
 .ref('functions/resize/{newImage}')
 .onCreate((snapshot, context) => {
-  const data = snapshot.val();
-  const extension = '.' + /[^/]*$/.exec(data.mime)[0];
-  const newFileName = createRandomFileName(data.filePath);
-  const localFile = newFileName + extension
+  const data = snapshot.val();  
   const resizes = data.resizes;
+  const tempLocalFile = path.join(os.tmpdir(), data.filePath);
+  const tempLocalDir = path.dirname(tempLocalFile);
+  const file = bucket.file(data.filePath);
 
   return Promise.resolve()
   .then(() => {
-    return downloadFile(data.filePath, localFile);
+    const file = bucket.file(data.filePath);
+    return mkdirp(tempLocalDir);
   })
-  .then((result) => {  
+  .then(() => {
+    return file.download({destination: tempLocalFile});
+  })
+  .then(() => {
+    var promises = [];
     for (var property in resizes) {
       if (resizes.hasOwnProperty(property)) {
-        resizeProcess(newFileName, localFile, extension, result, data.mime, data.key, resizes[property].name, resizes[property].size)
+        let promise = resizeProcess(tempLocalFile, data.filePath, data.mime, data.key, resizes[property].name, resizes[property].size)
+        promises.push(promise);
       }
     }
+    return $q.all(promises);
+  })
+  .then(() => {
     admin.database().ref('functions/resize/' +  snapshot.key ).remove();
+    fs.unlinkSync(tempLocalFile);
     return; 
   });
 })

@@ -1,40 +1,9 @@
 <template>
   <div class="container">
-    <section class="section">
-    <h1 class="maintitle">3600 STEPS</h1>
-    </section>
-    <section class="section">
-
-
-      <!-- <div v-for="(i, index) in imagesAll">
-        
-        <div @click="deleteFB(i)">Delete</div> {{i.dateAdded}} - <img :src="i.url" style="width:100px;height:auto">
-      </div> -->
-
-          <b-field style="float:left">
-            <b-select placeholder="Choose walk" v-model="selectedWalk"  @input="filterByWalk(selectedWalk['.key'])">
-              <option  :value="'Alles'" :key="null">Alles</option>
-              <option
-                  v-for="(item, index) in walks"
-                  :value="item"
-                  :key="index">
-                  {{ item.id}}
-              </option>
-            </b-select>
-          </b-field>
-
-        <!-- <div style="float:left;width:4rem"  @click="getRandom"> -->
-
-          <div style="width:3rem;float:left;top:-.4rem;position:relative; left:1rem;">
-            <img src="../assets/random.svg" alt="random pictures" style="width: 100%; height: auto;" @click="getRandom" >
-          </div>
-
-    </section>
     <div>
       <div class="grid" style=" display: flex;flex-direction:row;flex-wrap:wrap;justify-content: space-between">
         <div v-for="(item, index) in imageSelection" v-bind:key="index+'_grid'" style="width:18%;margin-bottom:2rem;" v-bind:style="{'margin-left': Math.floor(Math.random() * 50) + 1  +'px','margin-right': Math.floor(Math.random() * 50) + 1  +'px'  }" >
-          <div class="filtered" v-bind:class="classes[Math.floor(Math.random() * 2)]" style="float:left" @click="imageModal(item.image.uuid)">
-            {{ index }}
+          <div class="filtered" v-bind:class="classes[Math.floor(Math.random() * 2)]" style="float:left" @click="imageModal(item.full)">
             <img v-if="item.image" class="grid-picture" :src="item.image.uuid | getResized"  >
             <img v-else class="grid-picture" :src="item.url" >
           </div>
@@ -46,9 +15,17 @@
 
 <script>
 import { db } from '../firebase';
+import uploadcare from 'uploadcare-widget'
+
+function getSeconds() {
+  let date = new Date();
+  let seconds = date.getTime();
+  return seconds;
+}
+
 
 export default {
-  name: 'Home',
+  name: 'Slideshow',
   data() {
     return {
       imageSelection: {},
@@ -61,6 +38,13 @@ export default {
   },
   filters: {
     getResized: function(id) {
+      var gfilePromise = file.promise();
+      groupPromise.done(function(fileGroupInfo) {
+        // Upload successfully completed and all files in the group are ready.
+      });
+      groupPromise.fail(function(error, fileGroupInfo) {
+        // Upload failed, or something else went wrong.
+      });
       return "https://ucarecdn.com/" + id + "/-/resize/300x/";
     }
   },
@@ -69,7 +53,8 @@ export default {
       walks: {
         source: db.ref('data/walks'),
         readyCallback: function() {
-          this.getRandom();
+          let vm = this;
+          vm.getRandom();
         },
       },
     };
@@ -82,8 +67,9 @@ export default {
     imageModal(url) {
       const randomClass = this.classes[Math.floor(Math.random() * 2)];
       console.log(randomClass);
-      this.$modal.open('<div class="filtered ' + randomClass + '" ><img src="https://ucarecdn.com/' + url + '/-/resize/900x/"></div>');
+      this.$modal.open('<div class="filtered ' + randomClass + '" ><img src="' + url + '"></div>');
     },
+
     getRandom: function() {
         let vm = this;
         Array.prototype.shuffle = function(){
@@ -114,21 +100,22 @@ export default {
         }
         let walk = vm.theWalk;
 
-      if(walk == null) {  
-        db.ref('data/images')
-          .once('value', snapshot => {
-            let images = snapshot.val();          
-            vm.imageSelection = shuffleProperties(images);
+      function saveSelection(selection) {
+          db.ref('admin/slideshow').push({
+              time: getSeconds(),
+              images: selection
           });
-      } else {
-        db.ref('data/images')
-          .orderByChild('walk')
-          .equalTo(walk)
+        }
+
+      db.ref('data/images')
           .once('value', snapshot => {
             let images = snapshot.val();
-            vm.imageSelection = shuffleProperties(images);
+            window.setInterval(() => {
+              vm.imageSelection = shuffleProperties(images);
+              console.log('jep')
+              saveSelection(vm.imageSelection);
+            }, 5000);
           });
-      }
     },
       
     filterByWalk: function(walk) {

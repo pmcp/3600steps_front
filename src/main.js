@@ -45,8 +45,10 @@ Vue.use(Meta, {
 Vue.config.productionTip = false;
 
 import Home from './views/Home.vue';
+import Slideshow from './views/Slideshow.vue';
 import Help from './views/Help.vue';
 import Walk from './views/Walk.vue';
+import Finder from './components/Admin.Finder.vue'
 
 
 var Routes = [
@@ -55,13 +57,23 @@ var Routes = [
     component: Home,
   },
   {
+    path: '/slideshow',
+    component: Slideshow,
+  },
+  {
     path: '/help',
     component: Help,
   },
   {
+    path: '/finder',
+    name: 'finder',
+    component: Finder
+  },
+  {
     path: '/:id',
     component: Walk,
-  },
+  }
+
 ];
 
 var router = new VueRouter({

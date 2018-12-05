@@ -1,6 +1,11 @@
 'use strict';
 
 const functions = require('firebase-functions');
+const rp = require('request-promise');
+
+
+
+
 const mkdirp = require('mkdirp-promise');
 const vision = require('@google-cloud/vision');
 const { Storage } = require('@google-cloud/storage');
@@ -130,6 +135,7 @@ function resizeProcess(tempFile, filePath, mime, key, sizeName, sizeValue) {
   })
   .then((result) => {
     fs.unlinkSync(resizedFile);
+    admin.database().ref('functions/vision/' +  snapshot.key ).remove();
     return;
   })  
 }
@@ -142,7 +148,7 @@ exports.getVision = functions.database
 .ref('functions/vision/{newImage}')
 .onCreate((snapshot, context) => {
   const data = snapshot.val();
-  const gcsUrl = getGcsUrl(data.filePath)
+  const gcsUrl = getGcsUrl(data.fileName)
   return Promise.resolve()
   .then(() => {
     return getVisionParameters(gcsUrl);
@@ -161,36 +167,93 @@ exports.getVision = functions.database
   })
 })
 
-exports.resizeImage= functions.database
-.ref('functions/resize/{newImage}')
-.onCreate((snapshot, context) => {
-  const data = snapshot.val();  
-  const resizes = data.resizes;
-  const tempLocalFile = path.join(os.tmpdir(), data.filePath);
-  const tempLocalDir = path.dirname(tempLocalFile);
-  const file = bucket.file(data.filePath);
+// exports.resizeImage= functions.database
+// .ref('functions/resize/{newImage}')
+// .onCreate((snapshot, context) => {
+//   const data = snapshot.val();  
+//   const resizes = data.resizes;
+//   const tempLocalFile = path.join(os.tmpdir(), data.fileName);
+//   const tempLocalDir = path.dirname(tempLocalFile);
+//   const file = bucket.file(data.fileName);
 
-  return Promise.resolve()
-  .then(() => {
-    const file = bucket.file(data.filePath);
-    return mkdirp(tempLocalDir);
+//   return Promise.resolve()
+//   .then(() => {
+//     const file = bucket.file(data.fileName);
+//     return mkdirp(tempLocalDir);
+//   })
+//   .then(() => {
+//     return file.download({destination: tempLocalFile});
+//   })
+//   .then(() => {
+//     var promises = [];
+//     for (var property in resizes) {
+//       if (resizes.hasOwnProperty(property)) {
+//         let promise = resizeProcess(tempLocalFile, data.fileName, data.mime, data.key, resizes[property].name, resizes[property].size)
+//         promises.push(promise);
+//       }
+//     }
+//     return $q.all(promises);
+//   })
+//   .then(() => {
+//     admin.database().ref('functions/resize/' +  snapshot.key ).remove();
+//     fs.unlinkSync(tempLocalFile);
+//     return; 
+//   });
+// })
+
+
+function postToUploadCare(uid, func) {
+  rp('https://ucarecdn.com/' + uid + func)
+    .then((result) => {
+      console.log('in function', result)
+      return result
+    })
+    .catch((err) => {
+      console.log('in function', err)
+      return err
+    });
+}
+
+
+exports.getColor= functions.database
+.ref('functions/colors/{newImage}')
+.onCreate((snapshot, context) => {
+  const data = snapshot.val();
+  return rp('https://ucarecdn.com/' + data.image.uuid + '/-/preview/-/main_colors/')
+  .then((result) => {
+    console.log('in function', result)
+    return result
   })
-  .then(() => {
-    return file.download({destination: tempLocalFile});
-  })
-  .then(() => {
-    var promises = [];
-    for (var property in resizes) {
-      if (resizes.hasOwnProperty(property)) {
-        let promise = resizeProcess(tempLocalFile, data.filePath, data.mime, data.key, resizes[property].name, resizes[property].size)
-        promises.push(promise);
-      }
-    }
-    return $q.all(promises);
-  })
-  .then(() => {
-    admin.database().ref('functions/resize/' +  snapshot.key ).remove();
-    fs.unlinkSync(tempLocalFile);
-    return; 
+  .catch((err) => {
+    console.log('in function', err)
+    return err
   });
+
+
+  // return postToUploadCare(data.image.uuid, '/-/preview/-/main_colors/')
+  // .then((result) => {
+  //   console.log('in main', result)
+  //   return result
+  // })
+  // .then((snapshot) => {
+  //   console.log('the key', snapshot.key);
+  //   updateFirebase('data/images/' + data.key + '/colors', snapshot.key);
+  //   admin.database().ref('functions/colors/' +  snapshot.key ).remove();
+  //   return snapshot
+  // })
+  
+  // rp('https://ucarecdn.com/' + data.image.uuid + '/-/preview/-/main_colors/')
+  //   .then((result) => { 
+  //     let array = {
+  //       result: result,
+  //       image: data.key
+  //     };
+  //     // let res = {colors: {result}, image: data.key}
+  //     return admin.database().ref('data/colors').push(array)
+  //   })
+  //   .catch((err) => {
+  //     console.log(err)
+  //     admin.database().ref('functions/errors/').push(data)
+  //     return 
+  //   })
 })

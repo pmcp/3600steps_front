@@ -34,8 +34,8 @@
       <div class="grid" style=" display: flex;flex-direction:row;flex-wrap:wrap;justify-content: space-between">
         <div v-for="(item, index) in imageSelection" v-bind:key="index+'_grid'" style="width:18%;margin-bottom:2rem;" v-bind:style="{'margin-left': Math.floor(Math.random() * 50) + 1  +'px','margin-right': Math.floor(Math.random() * 50) + 1  +'px'  }" >
           <div class="filtered" v-bind:class="classes[Math.floor(Math.random() * 2)]" style="float:left" @click="imageModal(item.url)">
-            <!-- <img v-if="item.thumb" class="grid-picture" :src="item.thumb" > -->
-            <img class="grid-picture" :src="item.url" >
+            <!-- <img v-if="item.image" class="grid-picture" :src="item.image.uuid | getResized"  > -->
+            <!-- <img v-else class="grid-picture" :src="item.url" > -->
           </div>
         </div>
       </div>
@@ -58,10 +58,14 @@ export default {
       numberOfPicturesInSelection: 12
     };
   },
+  filters: {
+    getResized: function(id) {
+      return "https://ucarecdn.com/" + id + "/-/resize/100x/";
+    }
+  },
   firebase: function() {
     return {
-      walks: db.ref('data/walks'),
-
+      walks: db.ref('data/walks')
     };
   },
   metaInfo: {

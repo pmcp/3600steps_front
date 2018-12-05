@@ -12,6 +12,7 @@
     "firebase": "^5.4.2",
     "firebase-tools": "^5.1.1",
     "register-service-worker": "^1.0.0",
+    "uploadcare-widget": "^3.6.1",
     "vue": "^2.5.17",
     "vue-carousel": "^0.9.0",
     "vue-form": "^4.9.0",

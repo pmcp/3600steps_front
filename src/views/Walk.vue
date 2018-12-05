@@ -184,8 +184,7 @@ export default {
     },
   methods: {
     // This should completely go to fb functions
-    fileUploaded(data) {
-      console.log(data);
+    fileUploaded(obj) {
       if (this.userKey === null) {
         // No user key is set, user does not exist
       } else {
@@ -201,41 +200,34 @@ export default {
           return getSeconds();
         });
       }
-
+      const dateAdded = getSeconds();
+      const user = this.$storage.get('userKey');
+      const walk = this.activeWalk;
       db.ref('data/images').push({
-        url: data.url,
-        dateAdded: getSeconds(),
-        user: this.$storage.get('userKey'),
-        walk: this.activeWalk,
-        filePath: data.filePath,
-        mime: data.mime
+        image: obj,
+        dateAdded: dateAdded,
+        user: user,
+        walk: walk
       }).then((result) => {
-      // Also put this in the queue for Vision
-      db.ref('functions/vision').push({
-        url: data.url,
-        dateAdded: getSeconds(),
-        user: this.$storage.get('userKey'),
-        walk: this.activeWalk,
-        filePath: data.filePath,
-        mime: data.mime,
-        key: result.key
-      });
+        console.log(result);
+      // // Also put this in the queue for Vision
+      // db.ref('functions/vision').push({
+      //   url: data.url,
+      //   dateAdded: getSeconds(),
+      //   user: this.$storage.get('userKey'),
+      //   walk: this.activeWalk,
+      //   fileName: data.fileName,
+      //   mime: data.mime,
+      //   key: result.key
+      // });
 
       // Also put this in the queue for image Resizing
-        db.ref('functions/resize').push({
-        filePath: data.filePath,
-        mime: data.mime,
-        resizes: {
-          'small': {
-            'name': 'small',
-            'size': '25%'
-          },
-          'thumb': {
-            'name': 'thumb',
-            'size': '5%'
-          }
-        },
-        key: result.key
+        db.ref('functions/colors').push({
+        image: obj,
+        dateAdded: dateAdded,
+        key: result.key,
+        user: user,
+        walk: walk
       });
         return;
       })

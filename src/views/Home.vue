@@ -211,7 +211,6 @@ export default {
   font-size: 6vw;
   text-align: center;
 }
-
 .grid {
   width: 100%;
 }
@@ -247,6 +246,7 @@ export default {
   align-items: center;
 }
 .phi {
+  position: unset;
   height: 5rem;
   width: auto;
 }
